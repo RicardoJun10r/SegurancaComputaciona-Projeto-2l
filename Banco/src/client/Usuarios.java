@@ -8,7 +8,8 @@ import java.util.Scanner;
 import javax.crypto.SecretKey;
 
 import util.ClientSocket;
-import util.Seguranca;
+import util.Seguranca.CifrasSimetricas;
+import util.Seguranca.RSA;
 
 public class Usuarios implements Runnable {
 
@@ -20,24 +21,41 @@ public class Usuarios implements Runnable {
 
     private Boolean logado;
 
-    private Seguranca seguranca = new Seguranca();
+    private CifrasSimetricas seguranca = new CifrasSimetricas();
+
+    private RSA rsa;
 
     public Usuarios() {
         this.scan = new Scanner(System.in);
         this.logado = false;
+        this.rsa = new RSA();
     }
 
     @Override
     public void run() {
         String mensagem;
         while ((mensagem = this.clientSocket.getMessage()) != null) {
-            if (mensagem.split(" ")[0].equals("status")) {
-                logado = Boolean.parseBoolean(mensagem.split(" ")[1]);
-                this.seguranca.setChaveVernan(mensagem.split(" ")[2]);
-                this.seguranca.setChave((SecretKey) this.clientSocket.receberObjeto());
-            } else {
+            if (mensagem.split(" ")[0].equals("rsa")) {
+                this.rsa.setE_extrangeiro(Long.parseLong(mensagem.split(" ")[1]));
+                this.rsa.phi(this.rsa.getP(), this.rsa.getQ());
+                this.rsa.expD(this.rsa.getE_extrangeiro(), this.rsa.getPhi());
                 System.out.println(
                         "Resposta do banco: " + mensagem);
+            } else{
+                System.out.println("MENSAGEM COM RSA: " + mensagem);
+                mensagem = rsa.decifragemServer(mensagem);
+                System.out.println("DECIFRANDO DO BANCO: " + mensagem);
+                if (mensagem.split(" ")[0].equals("status")) {
+                    System.out.println("MENSAGEM: " + mensagem);
+                    logado = Boolean.parseBoolean(mensagem.split(" ")[1]);
+                    if(logado){
+                        this.seguranca.setChaveVernan(mensagem.split(" ")[2]);
+                        this.seguranca.setChave((SecretKey) this.clientSocket.receberObjeto());
+                    }
+                } else {
+                    System.out.println(
+                            "Resposta do banco: " + mensagem);
+                }
             }
         }
     }
@@ -53,7 +71,9 @@ public class Usuarios implements Runnable {
             System.out.println("> Senha");
             System.out.print("> ");
             String senha = scan.next();
-            enviar("1;" + login + ";" + senha);
+            String msg_rsa = this.rsa.cifragemCliente("1;" + login + ";" + senha);
+            System.out.println("RSA: " + msg_rsa);
+            enviar(msg_rsa);
         } else if (op.equals("2")) {
             String senha;
             String nova_conta = "";
@@ -74,7 +94,8 @@ public class Usuarios implements Runnable {
             System.out.print("> ");
             senha = scan.next();
             nova_conta += senha;
-            enviar("2;" + nova_conta);
+            String msg_rsa = this.rsa.cifragemCliente("2;" + nova_conta);
+            enviar(msg_rsa);
         }
     }
 
@@ -111,6 +132,7 @@ public class Usuarios implements Runnable {
         String msg;
         String msg_cifrada;
         String hmac;
+        String msg_rsa;
         switch (option) {
             case "3":
                 msg = "3;";
@@ -122,7 +144,8 @@ public class Usuarios implements Runnable {
                 msg += this.scan.next();
                 msg_cifrada = this.seguranca.cifrar(msg);
                 hmac = this.seguranca.hMac(msg);
-                enviar(msg_cifrada + ";" + hmac);
+                msg_rsa = this.rsa.cifragemCliente(msg_cifrada + ";" + hmac);
+                enviar(msg_rsa);
                 break;
             case "4":
                 msg = "4;";
@@ -134,7 +157,8 @@ public class Usuarios implements Runnable {
                 msg += this.scan.next();
                 msg_cifrada = this.seguranca.cifrar(msg);
                 hmac = this.seguranca.hMac(msg);
-                enviar(msg_cifrada + ";" + hmac);
+                msg_rsa = this.rsa.cifragemCliente(msg_cifrada + ";" + hmac);
+                enviar(msg_rsa);
                 break;
             case "5":
                 msg = "5;";
@@ -149,7 +173,8 @@ public class Usuarios implements Runnable {
                 msg += this.scan.next();
                 msg_cifrada = this.seguranca.cifrar(msg);
                 hmac = this.seguranca.hMac(msg);
-                enviar(msg_cifrada + ";" + hmac);
+                msg_rsa = this.rsa.cifragemCliente(msg_cifrada + ";" + hmac);
+                enviar(msg_rsa);
                 break;
             case "6":
                 msg = "6;";
@@ -158,7 +183,8 @@ public class Usuarios implements Runnable {
                 msg += this.scan.next();
                 msg_cifrada = this.seguranca.cifrar(msg);
                 hmac = this.seguranca.hMac(msg);
-                enviar(msg_cifrada + ";" + hmac);
+                msg_rsa = this.rsa.cifragemCliente(msg_cifrada + ";" + hmac);
+                enviar(msg_rsa);
                 break;
             case "7":
                 msg = "7;";
@@ -173,7 +199,8 @@ public class Usuarios implements Runnable {
                 msg += this.scan.next();
                 msg_cifrada = this.seguranca.cifrar(msg);
                 hmac = this.seguranca.hMac(msg);
-                enviar(msg_cifrada + ";" + hmac);
+                msg_rsa = this.rsa.cifragemCliente(msg_cifrada + ";" + hmac);
+                enviar(msg_rsa);
                 break;
             case "8":
                 msg = "8;";
@@ -188,7 +215,8 @@ public class Usuarios implements Runnable {
                 msg += this.scan.next();
                 msg_cifrada = this.seguranca.cifrar(msg);
                 hmac = this.seguranca.hMac(msg);
-                enviar(msg_cifrada + ";" + hmac);
+                msg_rsa = this.rsa.cifragemCliente(msg_cifrada + ";" + hmac);
+                enviar(msg_rsa);
                 break;
             case "9":
                 msg = "9;";
@@ -203,7 +231,8 @@ public class Usuarios implements Runnable {
                 msg += this.scan.next();
                 msg_cifrada = this.seguranca.cifrar(msg);
                 hmac = this.seguranca.hMac(msg);
-                enviar(msg_cifrada + ";" + hmac);
+                msg_rsa = this.rsa.cifragemCliente(msg_cifrada + ";" + hmac);
+                enviar(msg_rsa);
                 break;
             case "10":
                 msg = "10;";
@@ -218,7 +247,8 @@ public class Usuarios implements Runnable {
                 msg += this.scan.next();
                 msg_cifrada = this.seguranca.cifrar(msg);
                 hmac = this.seguranca.hMac(msg);
-                enviar(msg_cifrada + ";" + hmac);
+                msg_rsa = this.rsa.cifragemCliente(msg_cifrada + ";" + hmac);
+                enviar(msg_rsa);
                 break;
             case "sair":
                 System.out.println("Saindo");
@@ -236,6 +266,11 @@ public class Usuarios implements Runnable {
             System.out
                     .println("Cliente conectado ao servidor de endereço = " + ENDERECO_SERVER + " na porta = " + 1025);
             new Thread(this).start();
+            this.rsa.gerarPG();
+            this.rsa.setN(this.rsa.getP()*this.rsa.getQ());
+            this.rsa.gerarE();
+            System.out.println("Enivando { p, q, e }");
+            enviar("rsa_chaves;" + this.rsa.getP() + ";" + this.rsa.getQ() + ";" + this.rsa.getE());
             messageLoop();
         } finally {
             clientSocket.close();

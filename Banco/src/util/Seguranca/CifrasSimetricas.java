@@ -1,4 +1,4 @@
-package util;
+package util.Seguranca;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -14,7 +14,7 @@ import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 
-public class Seguranca implements Serializable {
+public class CifrasSimetricas implements Serializable {
 
     public static final String ALG = "HmacSHA256";
 
@@ -28,7 +28,7 @@ public class Seguranca implements Serializable {
 
     private String mensagemCifrada;
 
-    public Seguranca(int num) {
+    public CifrasSimetricas(int num) {
         try {
             gerarChave(num);
             gerarChaveVernan(num);
@@ -37,7 +37,7 @@ public class Seguranca implements Serializable {
         }
     }
 
-    public Seguranca() {
+    public CifrasSimetricas() {
     }
 
     public void setChave(SecretKey secretKey) {
